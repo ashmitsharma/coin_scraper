@@ -1,0 +1,8 @@
+Django
+djangorestframework
+celery
+requests
+selenium
+webdriver-manager
+redis
+django-celery-results
