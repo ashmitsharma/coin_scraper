@@ -16,13 +16,14 @@ class CoinMarketCapScraper:
         chrome_options.add_argument("--start-maximized")
         # self.driver = webdriver.Chrome(options=chrome_options)
         self.chrome_options = chrome_options
+        self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.chrome_options)
+
 
 
     def scrape_coin(self, coin):
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.chrome_options)
         url = f'https://coinmarketcap.com/'
         try:
-            driver.get(url)
+            self.driver.get(url)
         except Exception as e:
             print(f"Failed to load URL: {e}")
             return None
@@ -30,7 +31,7 @@ class CoinMarketCapScraper:
         try:
             # Locate the div with class 'search-input-static' and click it to activate the input field
             time.sleep(3)
-            search_div = driver.find_element(By.CLASS_NAME, 'search-input-static')
+            search_div = self.driver.find_element(By.CLASS_NAME, 'search-input-static')
             search_div.click()
         except Exception as e:
             print(f"Failed to find or click search input static: {e}")
@@ -38,7 +39,7 @@ class CoinMarketCapScraper:
 
         try:
             # Wait until the input element with class 'desktop-input' appears
-            wait = WebDriverWait(driver, 10)
+            wait = WebDriverWait(self.driver, 10)
             search_input = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'desktop-input')))
         except Exception as e:
             print(f"Failed to locate desktop input: {e}")
@@ -59,26 +60,26 @@ class CoinMarketCapScraper:
 
         try:
             time.sleep(2)
-            data = self.extract_data(driver)
+            data = self.extract_data()
             return data
         except Exception as e:
             print(f"Failed to extract data: {e}")
             return None
 
-    def extract_data(self, driver):
+    def extract_data(self):
         data = {}
 
         try:
-            price_element = driver.find_element(By.XPATH,
-                                                '(//div[contains(@class, "coin-stats-header")]//span[contains(@class, "base-text")])[2]')
+            price_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                'div#section-coin-overview div.gNSoet.flexStart.alignBaseline > span')
             data['price'] = float(price_element.text.replace('$', '').replace(',', ''))
         except Exception as e:
             data['price'] = None
             print(f"Error extracting price: {e}")
 
         try:
-            price_change_element = driver.find_element(By.XPATH,
-                                                       '//div[contains(@class, "coin-stats-header")]//p[@color]')
+            price_change_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                       'div#section-coin-overview p')
             price_change_text = price_change_element.text.split('%')[0].split()[-1]
             data['price_change'] = float(price_change_text)
             if price_change_element.get_attribute('color') == 'red':
@@ -88,8 +89,8 @@ class CoinMarketCapScraper:
             print(f"Error extracting price change: {e}")
 
         try:
-            market_cap_element = driver.find_element(By.XPATH,
-                                                     '/html/body/div[1]/div[2]/div/div[2]/div/div/div[2]/div[2]/section[2]/div/div[1]/div/dl/div[1]/div[1]/dd')
+            market_cap_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                     'div#section-coin-stats div:nth-child(1) > div.bwRagp.iWXelA.flexBetween > dd')
             market_cap_text = market_cap_element.text
             market_cap = int(market_cap_text.split('$')[-1].replace(',', ''))
             data['market_cap'] = market_cap
@@ -98,8 +99,8 @@ class CoinMarketCapScraper:
             print(f"Error extracting market cap: {e}")
 
         try:
-            market_cap_rank_element = driver.find_element(By.XPATH,
-                                                          '/html/body/div[1]/div[2]/div/div[2]/div/div/div[2]/div[2]/section[2]/div/div[1]/div/dl/div[1]/div[2]/div/span')
+            market_cap_rank_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                          'div#section-coin-stats div:nth-child(1) > div.bwRagp.iElHRj.BasePopover_base__tgkdS > div > span')
             market_cap_rank_text = market_cap_rank_element.text
             market_cap_rank = int(market_cap_rank_text.replace('#', ''))
             data['market_cap_rank'] = market_cap_rank
@@ -108,8 +109,8 @@ class CoinMarketCapScraper:
             print(f"Error extracting market cap rank: {e}")
 
         try:
-            volume_element = driver.find_element(By.XPATH,
-                                                 '/html/body/div[1]/div[2]/div/div[2]/div/div/div[2]/div[2]/section[2]/div/div[1]/div/dl/div[2]/div[1]/dd')
+            volume_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                 'div#section-coin-stats div:nth-child(2) > div.bwRagp.iWXelA.flexBetween > dd')
             volume_text = volume_element.text
             volume = int(volume_text.split('$')[-1].replace(',', ''))
             data['volume'] = volume
@@ -118,8 +119,8 @@ class CoinMarketCapScraper:
             print(f"Error extracting volume: {e}")
 
         try:
-            volume_rank_element = driver.find_element(By.XPATH,
-                                                      '/html/body/div[1]/div[2]/div/div[2]/div/div/div[2]/div[2]/section[2]/div/div[1]/div/dl/div[2]/div[2]/div/span')
+            volume_rank_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                      'div#section-coin-stats div:nth-child(2) > div.bwRagp.iElHRj.BasePopover_base__tgkdS > div > span')
             volume_rank_text = volume_rank_element.text
             volume_rank = int(volume_rank_text.replace('#', ''))
             data['volume_rank'] = volume_rank
@@ -128,8 +129,8 @@ class CoinMarketCapScraper:
             print(f"Error extracting volume rank: {e}")
 
         try:
-            volume_change_element = driver.find_element(By.XPATH,
-                                                        '/html/body/div[1]/div[2]/div/div[2]/div/div/div[2]/div[2]/section[2]/div/div[1]/div/dl/div[3]/div/dd')
+            volume_change_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                        'div#section-coin-stats div:nth-child(3) > div > dd')
             volume_change_text = volume_change_element.text.split('%')[0]
             volume_change = float(volume_change_text)
             data['volume_change'] = volume_change
@@ -138,8 +139,8 @@ class CoinMarketCapScraper:
             print(f"Error extracting volume change: {e}")
 
         try:
-            circulating_supply_element = driver.find_element(By.XPATH,
-                                                             '/html/body/div[1]/div[2]/div/div[2]/div/div/div[2]/div[2]/section[2]/div/div[1]/div/dl/div[4]/div/dd')
+            circulating_supply_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                             'div#section-coin-stats div:nth-child(4) > div > dd')
             circulating_supply_text = circulating_supply_element.text.split()[0]
             circulating_supply = int(circulating_supply_text.replace(',', ''))
             data['circulating_supply'] = circulating_supply
@@ -148,8 +149,8 @@ class CoinMarketCapScraper:
             print(f"Error extracting circulating supply: {e}")
 
         try:
-            total_supply_element = driver.find_element(By.XPATH,
-                                                       '/html/body/div[1]/div[2]/div/div[2]/div/div/div[2]/div[2]/section[2]/div/div[1]/div/dl/div[5]/div/dd')
+            total_supply_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                       'div#section-coin-stats div:nth-child(5) > div > dd')
             total_supply_text = total_supply_element.text.split()[0]
             total_supply = int(total_supply_text.replace(',', ''))
             data['total_supply'] = total_supply
@@ -158,8 +159,8 @@ class CoinMarketCapScraper:
             print(f"Error extracting total supply: {e}")
 
         try:
-            diluted_market_cap_element = driver.find_element(By.XPATH,
-                                                             '/html/body/div[1]/div[2]/div/div[2]/div/div/div[2]/div[2]/section[2]/div/div[1]/div/dl/div[7]/div/dd')
+            diluted_market_cap_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                             'div#section-coin-stats div:nth-child(7) > div > dd')
             diluted_market_cap_text = diluted_market_cap_element.text
             diluted_market_cap = int(diluted_market_cap_text.replace('$', '').replace(',', ''))
             data['diluted_market_cap'] = diluted_market_cap
@@ -170,9 +171,9 @@ class CoinMarketCapScraper:
         contracts = []
         try:
             contract = {}
-            contacts_name_element = driver.find_element(By.XPATH, '//a[@class="chain-name"]//span[1]')
+            contacts_name_element = self.driver.find_element(By.CSS_SELECTOR, 'div#__next span.dEZnuB')
             contacts_name_text = contacts_name_element.text.replace(':', '')
-            contacts_address_element = driver.find_element(By.XPATH, '//a[@class="chain-name"]')
+            contacts_address_element = self.driver.find_element(By.XPATH, '//a[@class="chain-name"]')
             href_value = contacts_address_element.get_attribute('href').split('/')[-1]
             contract['name'] = contacts_name_text
             contract['address'] = href_value
@@ -184,8 +185,12 @@ class CoinMarketCapScraper:
 
         try:
             official_links = []
-            official_links_element = driver.find_element(By.XPATH,
-                                                         '(//div[contains(@class,"sc-d1ede7e3-0 sc-7f0f401-2")])[2]')
+            try:
+                official_links_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                         'div#__next div.cvkYMS.coin-info-links > div:nth-child(2) > div.bwRagp > div')
+            except:
+                official_links_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                          'div#__next div.cvkYMS.coin-info-links > div:nth-child(1) > div.bwRagp > div')
             official_links_a = official_links_element.find_elements(By.TAG_NAME, 'a')
             for official_link in official_links_a:
                 link_data = {}
@@ -199,8 +204,13 @@ class CoinMarketCapScraper:
 
         try:
             social_links = []
-            social_links_element = driver.find_element(By.XPATH,
-                                                       '(//div[contains(@class,"sc-d1ede7e3-0 sc-7f0f401-2")])[3]')
+            try:
+                social_links_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                       'div#__next div.cvkYMS.coin-info-links > div:nth-child(3) > div.bwRagp > div')
+            except Exception as e:
+                social_links_element = self.driver.find_element(By.CSS_SELECTOR,
+                                                                'div#__next div.cvkYMS.coin-info-links > div:nth-child(2) > div.bwRagp > div')
+
             social_links_a = social_links_element.find_elements(By.TAG_NAME, 'a')
             for social_link in social_links_a:
                 link_data = {}
@@ -212,9 +222,12 @@ class CoinMarketCapScraper:
             data['socials'] = []
             print(f"Error extracting social links: {e}")
 
-        driver.quit()
 
         return data
 
-    # def __del__(self):
-    #     driver.quit()
+    def quit(self):
+        if self.driver:
+            self.driver.quit()
+
+    def __del__(self):
+        self.driver.quit()

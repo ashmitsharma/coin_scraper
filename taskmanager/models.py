@@ -1,12 +1,12 @@
 from django.db import models
+import uuid
+
+class ScrapingJob(models.Model):
+    job_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class ScrapingTask(models.Model):
-    job_id = models.CharField(max_length=255)
+    job = models.ForeignKey(ScrapingJob, on_delete=models.CASCADE)
     coin = models.CharField(max_length=10)
-    status = models.CharField(max_length=50, default='Pending')
-    result = models.JSONField(null=True, blank=True)
+    output = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.coin} - {self.job_id}"
